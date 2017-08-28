@@ -6,7 +6,7 @@ class App extends Component {
     render(){
     	return (
     		<View style={{backgroundColor: '#000'}}>
-    			<TimelapseButton time={3} functionToSendSignal={'timeIsOver'} />
+    			<TimelapseButton seconds={5} functionToSendSignal={'timeIsOver'} />
     		</View>
     	);
     }

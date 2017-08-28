@@ -1,8 +1,11 @@
 import React, {Component} from 'react';
+import Svg,{
+    Circle,
+    G
+} from 'react-native-svg';
 import {View, TouchableOpacity, Text, Animated, StyleSheet} from 'react-native';
 import EStyleSheet from 'react-native-extended-stylesheet';
-// import ProgressCircle from 'react-native-progress-circle';
-import SvgExample from './SvgExample';
+import Bar from './bar';
 
 EStyleSheet.build();
 
@@ -10,11 +13,13 @@ class TimelapseButton extends Component{
   constructor(props) {
     super(props);
 
-    this.interval = null;
-
+    this.diameter = 50;
+    this.radius = this.diameter / 2;
+    this.strokeDasharray = 2 * Math.PI * this.radius;
+    this.strokeDashoffset = this.strokeDasharray;
     this.state = {
         startStopTimer: 0,
-        percent: 0,
+        progress: new Animated.Value(this.strokeDashoffset),
         roundHasBeenFinished: 0
     };
   }
@@ -22,171 +27,82 @@ class TimelapseButton extends Component{
   countTime = () => {
     if (this.state.startStopTimer){
       // stop timer
-      clearInterval(this.interval);
       this.setState({
         startStopTimer: 0,
-        percent: 0,
+        progress: new Animated.Value(this.strokeDashoffset),
         roundHasBeenFinished: 0
       });
-
     } else{
+      var self = this;
       // start timer
-      let self = this;
-
-      self.setState({
+      this.setState({
         startStopTimer: 1,
-        percent: 0,
+        progress: new Animated.Value(this.strokeDashoffset),
         roundHasBeenFinished: 0
       });
 
-      let step = 100 / this.props.time;
-      self.interval = setInterval(function(){
-        if (self.state.percent == 100){
-            self.setState({
-              percent: 0,
-              roundHasBeenFinished: !self.state.roundHasBeenFinished
-            });
-        }
-        let newPercent = self.state.percent + step;
-        if (newPercent >= 100){
-          self.setState({
-            percent: 100
-          });
-        } else{
-          self.setState({
-            percent: newPercent
-          });
-        }
-      }, 1000);
+      Animated.timing(this.state.progress, {
+        toValue: 40,
+        duration: this.props.seconds*1000
+      }).start(function(){
+        console.log(self.state.progress)
+      });
 
     }
   };
 
-  render(){
-    return (
-       <View>
-          <SvgExample/>
-       </View>
+  componentDidMount() {
+    var self = this;
+    Animated.timing(self.state.progress, {
+        toValue: 50,
+        duration: self.props.seconds*1000
+      }).start(function(){
+        console.log(self.state.progress)
+        console.log(self.state.progress._value)
+      });
+  }
 
-       // <ProgressCircle
-       //      percent={this.state.percent}
-       //      radius={30}
-       //      borderWidth={1}
-       //      color={this.state.roundHasBeenFinished ? "#fff" : '#E62B08'}
-       //      shadowColor={this.state.roundHasBeenFinished ? "#E62B08" : '#fff'}
-       //      bgColor="rgb(28, 42, 57)"
-       //  >
-       //      <TouchableOpacity onPress={this.props.time ? () => this.countTime() : () => this.countTime()} style={[styles.buttonStyles, { padding: 5, backgroundColor: this.state.startStopTimer ? '#E62B08' : '#FFF' }]} />
-       //  </ProgressCircle>
+  render(){
+    const rotate = "-90";
+    const progressWidth = 3;
+    const width = this.diameter + progressWidth;
+    const circleCenterPosition = width / 2;
+    const strokeDashoffset = this.strokeDasharray;
+
+    const transform = {
+        translate: `${circleCenterPosition},${circleCenterPosition}`, rotate: `${rotate}`
+      };
+
+    return (
+       <Animated.View style={{backgroundColor: 'grey'}}>
+         <TouchableOpacity onPress={this.props.seconds ? () => this.countTime() : () => this.countTime()} style={[styles2.buttonStyles]}>
+            <Svg style={[styles2.buttonStyles]}>
+              <G transform={transform}>
+                <Circle cx={0} cy={0} r={this.radius} fill="none" stroke={this.state.roundHasBeenFinished ? '#FFF' : 'green'} strokeWidth={progressWidth} />
+                <Circle cx={0} cy={0} r={this.radius-5} fill="#fff" />
+                <Circle cx={0} cy={0} r={this.radius} fill="none" stroke="#E62B08" strokeWidth={progressWidth} strokeDasharray={"" + this.strokeDasharray} strokeDashoffset={"" + this.state.progress._value}/>
+                </G>
+            </Svg>
+         </TouchableOpacity>
+                <Text style={{color: "#000"}}>{this.state.progress._value}</Text>
+       </Animated.View>
+            // <Bar value={120}/>
     )
   }
 }
 
-// const styles2 = StyleSheet.create({
-//   outerCircle: {
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     backgroundColor: '#e3e3e3',
-//   },
-//   innerCircle: {
-//     overflow: 'hidden',
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     backgroundColor: '#fff',
-//   },
-//   leftWrap: {
-//     position: 'absolute',
-//     top: 0,
-//   },
-//   halfCircle: {
-//     position: 'absolute',
-//     top: 0,
-//     borderTopRightRadius: 0,
-//     borderBottomRightRadius: 0,
-//     backgroundColor: '#f00',
-//   },
-// })
-
-const styles2 = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  gauge: {
-    position: 'absolute',
-    width: 100,
-    height: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gaugeText: {
-    backgroundColor: 'transparent',
-    color: '#000',
-    fontSize: 24,
-  },
-})
-
-const styles = EStyleSheet.create({
-  container: {
-    width: '11.56%',
-    backgroundColor: 'rgba(28, 42, 57, .7)',
-    paddingTop: 5,
-    paddingBottom: 10,
-    flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  modeContainerStyles: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingLeft: 5,
-    paddingRight: 5,
-    marginTop: 10,
-    marginBottom: 5
-  },
-  buttonContainerStyles: {
-    padding: 1,
-    width: 60,
-    height: 60,
-    borderWidth: 1,
-    borderColor: '#fff',
-    borderRadius: 60,
-    justifyContent: 'center',
-    alignItems: 'center'
-    // marginTop: 30,
-    // marginBottom: 20
-  },
+const styles2 = EStyleSheet.create({
   buttonStyles: {
-    width: 50,
-    height: 50,
-    borderRadius: 50
-  },
-  buttonPlayStyles: {
-    marginBottom: 25,
-    padding: 5
-  },
-  switchContainer: {
-    width: '100%',
-    alignItems: 'center'
+    width: 53,
+    height: 53,
+    borderRadius: 53
   },
   '@media (min-width: 1024)': {
-    container: {
-      paddingTop: 20,
-      paddingBottom: 15
-    },
-    buttonContainerStyles: {
-      width: 100,
-      height: 100,
-      borderRadius: 100
-    },
     buttonStyles: {
-      width: 86,
-      height: 86,
-      borderRadius: 86
-    },
+      width: 89,
+      height: 89,
+      borderRadius: 89
+    }
   }
 });
 
