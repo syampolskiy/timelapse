@@ -36,9 +36,9 @@ export default class TimelapseButton extends Component{
   }
 
   countTime = () => {
-      // this.setState({
-      //   progress: new Animated.Value(0)
-      // });
+      this.setState({
+        progress: new Animated.Value(0)
+      });
      Animated.timing(this.state.progress, {
         toValue: 100,
         duration: 5000
