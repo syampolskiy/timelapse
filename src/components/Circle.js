@@ -1,117 +1,86 @@
-import React, { Component } from 'react';
-import {
-  AppRegistry
-} from 'react-native';
-import Svg, { G, Circle } from 'react-native-svg';
+import React from 'react';
+import { ART, Platform } from 'react-native';
+import PropTypes from 'prop-types';
 
-export default class Cirlce extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      currentProgress: 0
-    };
-  }
+const { Surface, Shape, Path, Group } = ART
 
-  componentDidMount() {
-    const targetProgress = 1;
-    this._animate(targetProgress);
-  }
+function createPath(cx, cy, r, startAngle, arcAngle) {
+  const p = new Path()
+  p.path.push(0, cx + r * Math.cos(startAngle), cy + r * Math.sin(startAngle))
+  p.path.push(4, cx, cy, r, startAngle, startAngle + arcAngle, 1)
+  return p
+}
 
-  _animate = (_targetProgress) => {
-    const targetProgress = Math.max(0, _targetProgress);
-    if (targetProgress === 0) {
-      this.setState({ currentProgress: 0 });
-      return;
-    }
-    const {
-      animateStep,
-      animateDuration,
-      onAnimateUpdate,
-      onAnimateCompleted
-    } = {
-      animateStep: 0.005,
-      animateDuration: 100,
-      onAnimateUpdate: () => {},
-      onAnimateCompleted: () => {}
+const ArcShape = ({ radius, width, color, startAngle, arcAngle }) => {
+  const path = createPath(
+    radius,
+    radius,
+    radius - width / 2,
+    startAngle / 180 * Math.PI,
+    arcAngle / 180 * Math.PI
+  )
+  return <Shape d={path} stroke={color} strokeWidth={width} strokeCap="butt" />
+}
 
-    };
-    if (this._intervalId) this._intervalId = clearInterval(this._intervalId);
-    if (animateDuration > 0 && animateStep > 0) {
-      this.setState({ currentProgress: 0 });
-      const numberOfAnimates = Math.ceil(targetProgress / animateStep);
-      const intervalMilliseconds = Math.round(animateDuration / numberOfAnimates);
-      this._intervalId = setInterval(() => {
-        this._updateProgressByStep(animateStep, targetProgress, onAnimateUpdate, onAnimateCompleted);
-      }, intervalMilliseconds);
-    } else {
-      this.setState({ currentProgress: targetProgress });
-    }
-  };
+const RingShape = props =>
+  Platform.OS === 'ios'
+    ? <ArcShape {...props} startAngle={0} arcAngle={360} />
+    : <Group>
+        <ArcShape {...props} startAngle={0} arcAngle={180} />
+        <ArcShape {...props} startAngle={180} arcAngle={180} />
+      </Group>
 
-  _updateProgressByStep = (animateStep, targetProgress, onUpdate, onCompleted) => {
-    const { currentProgress } = this.state;
-    let nextProgress = Math.min(currentProgress + animateStep, targetProgress);
-    if (nextProgress === targetProgress) {
-      clearInterval(this._intervalId);
-    }
-    this.setState({ currentProgress: nextProgress }, () => {
-      onUpdate(nextProgress);
-      if (nextProgress === targetProgress) onCompleted();
-    });
-  };
+const Pie = ({ series, colors, radius, innerRadius, backgroundColor }) => {
+  const width = radius - innerRadius
+  const backgroundPath = createPath(radius, radius, radius - width / 2, 0, 360)
+  let startValue = 0
+  return (
+    <Surface width={radius * 2} height={radius * 2}>
+      <Group rotation={-90} originX={radius} originY={radius}>
+        <Shape
+          d={backgroundPath}
+          stroke={backgroundColor}
+          strokeWidth={width}
+        />
+        <RingShape radius={radius} width={width} color={backgroundColor} />
+        {series.map((item, idx) => {
+          const startAngle = startValue / 100 * 360
+          const arcAngle = item / 100 * 360
+          startValue += item
+          const color = colors[idx]
+          return arcAngle >= 360
+            ? <RingShape
+                key={idx}
+                radius={radius}
+                width={width}
+                color={color}
+              />
+            : <ArcShape
+                key={idx}
+                radius={radius}
+                width={width}
+                color={color}
+                startAngle={startAngle}
+                arcAngle={arcAngle}
+                strokeCap="butt"
+              />
+        })}
+      </Group>
+    </Surface>
+  )
+}
 
-  render() {
-    const diameter = 200;
-    const clockwise = true;
-    const maxProgress = 1;
-    const progressPadding = 0;
-    const progressWidth = 6;
-    const backgroundColor = '#cecece';
-    const color = 'green';
-    const rotate =  -90;
-    const lineCap = 'round';
-    const { currentProgress } = this.state;
+export default Pie
 
-    const realProgress = currentProgress * maxProgress;
-    const width = diameter + progressWidth;
-    const progressDiameter = (diameter - progressPadding);
-    const radius = progressDiameter / 2;
+Pie.propTypes = {
+  series: PropTypes.arrayOf(PropTypes.number).isRequired,
+  colors: PropTypes.arrayOf(PropTypes.string).isRequired,
+  radius: PropTypes.number.isRequired,
+  innerRadius: PropTypes.number,
+  backgroundColor: PropTypes.string,
+}
 
-    const bgDashArray = Math.PI * progressDiameter;
-    const maxProgressBasedOnDirection = clockwise ? (1 - maxProgress) : (1 + maxProgress);
-    const bgDashOffset = bgDashArray * maxProgressBasedOnDirection;
-
-    const progressDashArray = Math.PI * progressDiameter;
-    const percentValue2BasedOnDirection = clockwise ? (1 - realProgress) : (1 + realProgress);
-    const progressDashOffset = progressDashArray * percentValue2BasedOnDirection;
-    const circleCenterPosition = width / 2;
-
-    const transform = {
-      translate: `${circleCenterPosition},${circleCenterPosition}`, rotate: `${rotate}`
-    };
-    return (
-      <Svg width={width} height={width}>
-        <G transform={transform}>
-          <Circle
-            r={radius}
-            fill={'none'}
-            stroke={backgroundColor}
-            strokeWidth={progressWidth}
-            strokeLinecap={lineCap}
-            strokeDasharray={[bgDashArray]}
-            strokeDashoffset={bgDashOffset}
-          />
-          <Circle
-            r={radius}
-            fill={'none'}
-            stroke={color}
-            strokeWidth={progressWidth - progressPadding}
-            strokeLinecap={lineCap}
-            strokeDasharray={[progressDashArray]}
-            strokeDashoffset={progressDashOffset}
-          />
-        </G>
-      </Svg>
-    );
-  }
+Pie.defaultProps = {
+  innerRadius: 0,
+  backgroundColor: '#fff',
 }
