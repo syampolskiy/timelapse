@@ -94,7 +94,7 @@ export default class TimelapseButton extends Component{
 
 const styles = EStyleSheet.create({
   containerTmlps:{
-    backgroundColor: 'rgba(28, 42, 57, .7)'
+    backgroundColor: 'rgba(28, 42, 57, .7)',
   },
   containerForPressingBtn:{
     alignItems: 'center',
