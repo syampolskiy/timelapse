@@ -5,8 +5,8 @@ import TimelapseButton from './src/components/TimelapseButton';
 class App extends Component {
     render(){
     	return (
-    		<View style={{backgroundColor: '#000'}}>
-    			<TimelapseButton seconds={5} functionToSendSignal={'timeIsOver'} />
+    		<View>
+    			<TimelapseButton seconds={3} functionToSendSignal={'timeIsOver'} />
     		</View>
     	);
     }

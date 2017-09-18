@@ -33,22 +33,46 @@ export default class TimelapseButton extends Component{
       progress: new Animated.Value(0),
       timelapseColor: true
     }
+
+    this.time = this.props.seconds * 1000;
+    this.isAnimating = false;
+    this.stopAnimationTriggered = false;
+    this.animationTimeoutFunction = null;
   }
 
   countTime = () => {
-      this.setState({
-        progress: new Animated.Value(0)
-      });
-     Animated.timing(this.state.progress, {
-        toValue: 100,
-        duration: 5000
-     }).start(function(){
-        this.setState({
-          progress: new Animated.Value(0),
-          timelapseColor: !this.state.timelapseColor
-        });
-        // this.countTime();
-     });
+    var self = this;
+    
+    if (!self.isAnimating){
+      self.isAnimating = true;
+
+       Animated.timing(self.state.progress, {
+          toValue: 100,
+          duration: self.time
+       }).start();
+
+       self.animationTimeoutFunction = setTimeout(() => {
+          self.setState({
+            timelapseColor: !self.state.timelapseColor,
+            progress: new Animated.Value(0)
+          });
+          self.isAnimating = false;
+          // eval(self.props.functionToSendSignal + '();');
+          self.countTime();
+       }, self.time);
+    } else{
+      self.stopTmlpsAnimation();
+    }
+  }
+
+  stopTmlpsAnimation = () => {
+    clearTimeout(this.animationTimeoutFunction);
+    this.state.progress.stopAnimation();
+    this.setState({
+      timelapseColor: true,
+      progress: new Animated.Value(0)
+    });
+    this.isAnimating = false;
   }
 
   render() {
@@ -57,7 +81,7 @@ export default class TimelapseButton extends Component{
         <View style={ styles.containerTmlps }>
           <AnimatedTmlpsBtnWrapper series={this.state.progress} strokeWidth={1} radius={30} strokeColor={this.state.timelapseColor ? '#E62B08' : '#fff'} strokeBackground={this.state.timelapseColor == 1 ? '#fff' : '#E62B08'}>
             <TouchableOpacity
-              onPress={this.countTime} style={[styles.buttonTmlpsStyles, {backgroundColor: '#fff'}]}
+              onPress={this.time ? this.countTime : console.log('old functionality')} style={[styles.buttonTmlpsStyles, {backgroundColor: '#fff'}]}
             />
           </AnimatedTmlpsBtnWrapper>
         </View>
@@ -83,14 +107,14 @@ const styles = EStyleSheet.create({
     position: 'absolute'
   },
   container: {
-    // width: '11.56%',
+    width: '11.56%',
     backgroundColor: 'rgba(28, 42, 57, .7)',
     paddingTop: 5,
     paddingBottom: 10,
-    // flex: 1,
-    // flexDirection: 'column',
-    // justifyContent: 'space-between',
-    // alignItems: 'center'
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    alignItems: 'center'
   },
   modeContainerStyles: {
     flexDirection: 'row',
